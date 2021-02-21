@@ -2,15 +2,15 @@
 
 ChatClient::ChatClient() {  }
 
-ChatClient::ChatClient(const char* addr, const char* username, CALLBACK_ACTION callback) {
+ChatClient::ChatClient(const char* addr, const char* username, CALLBACK_ACTION callback, CALLBACK_FAILED failed) {
 	mUsername = username;
 	mCallback = callback;
+	mFailed = failed;
 
 	WSAData wsaData;
 	WORD DLLVersion = MAKEWORD(1, 2);
 	if (WSAStartup(DLLVersion, &wsaData) != 0) {
-		// todo onFailed()
-		exit(1);
+		mFailed();
 	}
 
 	mSocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -21,6 +21,7 @@ ChatClient::ChatClient(const char* addr, const char* username, CALLBACK_ACTION c
 }
 
 ChatClient::~ChatClient() {
+	closesocket(mSocket);
 	delete mUsername;
 }
 
@@ -28,8 +29,7 @@ DWORD ChatClient::listenerSocket() {
 	connect(mSocket, (sockaddr*)&mSockAddr, sizeof(mSockAddr));
 	int k = ::send(mSocket, mUsername, strlen(mUsername), 0);
 	if (k < -1) {
-		strcpy(mBuffer, "error connect! Restart please");
-		mCallback(mBuffer, strlen(mBuffer));
+		mFailed();
 	}
 	while (true) {
 		int k = recv(mSocket, mBuffer, sizeof(mBuffer), 0);

@@ -12,6 +12,7 @@
 
 // Глобальные переменные:
 HINSTANCE hInst;                                // текущий экземпляр
+HWND hWnd;                                      // MainWindow
 WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
 
@@ -102,7 +103,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Сохранить маркер экземпляра в глобальной переменной
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+   hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, 700, 410, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
@@ -143,6 +144,8 @@ void onMessage(char* buffer, int length) {
 
 void onCreate(HWND hWnd) {
     DialogBox(hInst, MAKEINTRESOURCE(IDD_LOGIN), hWnd, Login);
+    WCHAR send[5];
+    LoadString(hInst, ID_BUTTON_SEND, send, 5);
     CreateWindow(TEXT("STATIC"), username, WS_VISIBLE | WS_CHILD, 520, 10, 150, 26, hWnd, NULL, hInst, NULL);
     CreateWindow(TEXT("BUTTON"), TEXT("SEND"), WS_VISIBLE | WS_CHILD | BS_FLAT | BS_PUSHBUTTON,
         455, 310, 50, 26, hWnd, (HMENU)ID_BUTTON_SEND, hInst, NULL);
@@ -154,13 +157,26 @@ void onCreate(HWND hWnd) {
     return;
 }
 
+void onFailed() {
+    int wParam = MAKEWORD(0, IDM_LOGOUT);
+    PostMessage(hWnd, WM_COMMAND, wParam, 0);
+}
+
 void onResume() {
     char* utfUsername = new char[30];
     WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, username, -1, utfUsername, 30, NULL, NULL);
     WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, lpString, -1, lpUtf, 100, NULL, NULL);
-    ptClient = new ChatClient(lpUtf, utfUsername, onMessage);
+    ptClient = new ChatClient(lpUtf, utfUsername, onMessage, onFailed);
     CreateThread(0, 1024, ptClient->staticThreadStart, (void*)ptClient, 0, NULL);
     return;
+}
+
+BOOL CALLBACK DestoryChildCallback(HWND hwnd, LPARAM lParam)
+{
+    if (hwnd != NULL) {
+        DestroyWindow(hwnd);
+    }
+    return TRUE;
 }
 
 
@@ -189,13 +205,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             // Разобрать выбор в меню:
             switch (wmId)
             {
+            case IDM_LOGOUT:
+                EnumChildWindows(hWnd, DestoryChildCallback, NULL);
+                ptClient->~ChatClient();
+                onCreate(hWnd);
+                break;
             case IDM_ABOUT:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
             case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
-            case  ID_BUTTON_SEND:
+            case ID_BUTTON_SEND:
             {
                 int n = GetWindowText(hEditText, lpString, 100);
                 if (n > 0) {
@@ -210,6 +231,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
+    case WM_RBUTTONDOWN:
+    {
+        HMENU hMenu = CreatePopupMenu();
+        AppendMenu(hMenu, MF_STRING, IDM_ABOUT, TEXT("About"));
+        AppendMenu(hMenu, MF_STRING, ID_BUTTON_SEND, TEXT("Send message"));
+        POINT p;
+        p.x = LOWORD(lParam);
+        p.y = HIWORD(lParam);
+        ClientToScreen(hWnd, &p);
+        TrackPopupMenu(hMenu, TPM_LEFTALIGN | TPM_TOPALIGN,
+            p.x, p.y, 0, hWnd, NULL);
+        break;
+    }
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
