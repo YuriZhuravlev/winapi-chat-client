@@ -3,6 +3,10 @@
 
 #include "framework.h"
 #include "winapi-chat-client.h"
+#include "ChatClient.h"
+#include <vector>
+
+#pragma warning(disable : 4996)
 
 #define MAX_LOADSTRING 100
 
@@ -98,7 +102,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // Сохранить маркер экземпляра в глобальной переменной
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+      CW_USEDEFAULT, 0, 550, 500, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
@@ -110,6 +114,42 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    return TRUE;
 }
+
+
+// Мои константы
+const int ID_BUTTON_SEND = 1000;
+const int ID_LIST_BOX_MESSAGES = 1001;
+const int ID_EDIT_TEXT_MESSAGES = 1002;
+
+// Логические элементы
+ChatClient client;
+char* lpUtf = new char[100];
+LPWSTR lpString = new WCHAR[100];
+std::vector<LPWSTR> itemList = std::vector<LPWSTR>();
+
+// UI-элементы
+HWND hList, hEditText;
+
+// Мои функции
+void onMessage(char* buffer) {
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buffer, -1, lpString, 100);
+    SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)lpString);
+}
+
+void onCreate(HWND hWnd) {
+    CreateWindow(TEXT("BUTTON"), TEXT("SEND"), WS_VISIBLE | WS_CHILD, 
+        250, 350, 50, 26, hWnd, (HMENU)ID_BUTTON_SEND, hInst, NULL);
+    hEditText = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("EDIT"), TEXT(""), WS_VISIBLE | WS_CHILD,
+        50, 350, 200, 26, hWnd, (HMENU)ID_EDIT_TEXT_MESSAGES, hInst, NULL);
+    hList = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("LISTBOX"), TEXT("listbox"), LBS_NOSEL |
+        WS_VISIBLE | WS_CHILD | WS_VSCROLL, 50, 50, 250, 300,
+        hWnd, (HMENU)ID_LIST_BOX_MESSAGES, hInst, NULL);
+
+    
+    client = ChatClient("192.168.0.103", "username", onMessage);
+    return;
+}
+
 
 //
 //  ФУНКЦИЯ: WndProc(HWND, UINT, WPARAM, LPARAM)
@@ -125,6 +165,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_CREATE:
+        {
+            onCreate(hWnd);
+        }
+        break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -136,6 +181,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             case IDM_EXIT:
                 DestroyWindow(hWnd);
+                break;
+            case  ID_BUTTON_SEND:
+                GetWindowText(hEditText, lpString, 100);
+                SetWindowText(hEditText, TEXT(""));
+                WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, lpString, -1, lpUtf, 100, NULL, NULL);
+                client.sendMessage(lpUtf);
+                SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)lpString);
                 break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
