@@ -14,6 +14,9 @@
 #define IDC_WINAPICHATCLIENT            109
 #define IDR_MAINFRAME                   128
 #define IDD_LOGIN                       129
+#define IDB_BITMAP1                     133
+#define IDC_CURSOR1                     134
+#define IDB_BITMAP2                     135
 #define IDC_IPADDRESS_DIALOG            1000
 #define IDC_EDIT1                       1001
 #define ID_32774                        32774
@@ -25,7 +28,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        131
+#define _APS_NEXT_RESOURCE_VALUE        136
 #define _APS_NEXT_COMMAND_VALUE         32778
 #define _APS_NEXT_CONTROL_VALUE         1004
 #define _APS_NEXT_SYMED_VALUE           110

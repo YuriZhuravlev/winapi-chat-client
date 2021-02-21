@@ -153,8 +153,15 @@
     <ResourceCompile Include="winapi-chat-client.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="icon.bmp" />
+    <Image Include="icon.ico" />
+    <Image Include="icon1.ico" />
+    <Image Include="img.bmp" />
     <Image Include="small.ico" />
     <Image Include="winapi-chat-client.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cursor.cur" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

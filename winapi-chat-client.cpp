@@ -80,7 +80,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WINAPICHATCLIENT));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
+    wcex.hCursor        = LoadCursor(hInstance, MAKEINTRESOURCE(IDC_CURSOR1));
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_WINAPICHATCLIENT);
     wcex.lpszClassName  = szWindowClass;
@@ -122,8 +122,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 const int ID_BUTTON_SEND = 51000;
 const int ID_LIST_BOX_MESSAGES = 51001;
 const int ID_EDIT_TEXT_MESSAGES = 51002;
+const int ID_CHECKBOX = 51003;
 
 // Логические элементы
+bool checked = false;
 ChatClient* ptClient;
 char* lpUtf = new char[100];
 LPWSTR username = new WCHAR[30];
@@ -131,6 +133,8 @@ LPWSTR lpString = new WCHAR[100];
 std::vector<LPWSTR> itemList = std::vector<LPWSTR>();
 
 // UI-элементы
+HANDLE hImg;
+HCURSOR hCursor = LoadCursor(hInst, MAKEINTRESOURCE(IDC_CURSOR1));
 HWND hList, hEditText;
 
 // Мои функции
@@ -143,17 +147,47 @@ void onMessage(char* buffer, int length) {
 }
 
 void onCreate(HWND hWnd) {
+    hImg = LoadImage(hInst, MAKEINTRESOURCE(IDB_BITMAP2), IMAGE_BITMAP, 0, 0, LR_DEFAULTSIZE);
     DialogBox(hInst, MAKEINTRESOURCE(IDD_LOGIN), hWnd, Login);
     WCHAR send[5];
+    HWND tmp;
     LoadString(hInst, ID_BUTTON_SEND, send, 5);
-    CreateWindow(TEXT("STATIC"), username, WS_VISIBLE | WS_CHILD, 520, 10, 150, 26, hWnd, NULL, hInst, NULL);
-    CreateWindow(TEXT("BUTTON"), TEXT("SEND"), WS_VISIBLE | WS_CHILD | BS_FLAT | BS_PUSHBUTTON,
+    tmp = CreateWindow(TEXT("STATIC"), username, WS_VISIBLE | WS_CHILD, 520, 10, 150, 26, hWnd, NULL, hInst, NULL);
+    SetClassLongPtr(tmp, GCL_HCURSOR, (LONG)hCursor);
+    
+    tmp = CreateWindow(TEXT("BUTTON"), TEXT("SEND"), WS_VISIBLE | WS_CHILD | BS_FLAT | BS_PUSHBUTTON,
         455, 310, 50, 26, hWnd, (HMENU)ID_BUTTON_SEND, hInst, NULL);
+    SetClassLongPtr(tmp, GCL_HCURSOR, (LONG)hCursor);
+
     hEditText = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("EDIT"), TEXT(""), WS_VISIBLE | WS_CHILD,
         10, 310, 440, 26, hWnd, (HMENU)ID_EDIT_TEXT_MESSAGES, hInst, NULL);
+
     hList = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("LISTBOX"), TEXT("listbox"), LBS_NOSEL |
         WS_VISIBLE | WS_CHILD | WS_VSCROLL,
         10, 10, 500, 300, hWnd, (HMENU)ID_LIST_BOX_MESSAGES, hInst, NULL);
+    SetClassLongPtr(hList, GCL_HCURSOR, (LONG)hCursor);
+
+    HWND hComboBox = CreateWindow(TEXT("COMBOBOX"), TEXT("COMBOBOX"),
+        CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
+        520, 310, 150, 100, hWnd, NULL, hInst, NULL);
+    SendMessage(hComboBox, CB_ADDSTRING, 0, (LPARAM)TEXT("Messages"));
+    SendMessage(hComboBox, CB_ADDSTRING, 0, (LPARAM)TEXT("Images"));
+    SendMessage(hComboBox, CB_ADDSTRING, 0, (LPARAM)TEXT("Canals"));
+    SendMessage(hComboBox, CB_ADDSTRING, 0, (LPARAM)TEXT("Groups"));
+    SendMessage(hComboBox, CB_SETCURSEL, 0, 0);
+    SetClassLongPtr(hComboBox, GCL_HCURSOR, (LONG)hCursor);
+
+    tmp = CreateWindow(TEXT("BUTTON"), TEXT("CHECKBOX"), BS_CHECKBOX | WS_CHILD | WS_VISIBLE, 
+        520, 270, 150, 26, hWnd, (HMENU)ID_CHECKBOX, hInst, NULL);
+    SetClassLongPtr(tmp, GCL_HCURSOR, (LONG)hCursor);
+    
+    tmp = CreateWindow(TEXT("BUTTON"), TEXT("RADIO_BUTTON1"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        520, 210, 150, 26, hWnd, NULL, hInst, NULL);
+    SetClassLongPtr(tmp, GCL_HCURSOR, (LONG)hCursor);
+
+    tmp = CreateWindow(TEXT("BUTTON"), TEXT("RADIO_BUTTON2"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        520, 240, 150, 26, hWnd, NULL, hInst, NULL);
+    SetClassLongPtr(tmp, GCL_HCURSOR, (LONG)hCursor);
     return;
 }
 
@@ -211,7 +245,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 onCreate(hWnd);
                 break;
             case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+                CreateDialog(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+                //DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
             case IDM_EXIT:
                 DestroyWindow(hWnd);
@@ -226,6 +261,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 break;
             }
+            case ID_CHECKBOX:
+                checked = !checked;
+                if (checked) {
+                    CheckDlgButton(hWnd, ID_CHECKBOX, BST_CHECKED);
+                }
+                else {
+                    CheckDlgButton(hWnd, ID_CHECKBOX, BST_UNCHECKED);
+                }
+                break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -248,6 +292,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
+
+            HDC hCompatibleDC;
+            PAINTSTRUCT PaintStruct;
+            HANDLE hBitmap, hOldBitmap;
+            BITMAP Bitmap;
+
+            GetObject(hImg, sizeof(BITMAP), &Bitmap);
+            hCompatibleDC = CreateCompatibleDC(hdc);
+            hOldBitmap = SelectObject(hCompatibleDC, hImg);
+            StretchBlt(hdc, 520, 100, 100, 100, hCompatibleDC, 0, 0, 100,
+                100, SRCCOPY);
+            SelectObject(hCompatibleDC, hOldBitmap);
+            DeleteDC(hCompatibleDC);
             // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
             EndPaint(hWnd, &ps);
         }
@@ -257,6 +314,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         delete lpUtf;
         delete username;
         delete lpString;
+        DeleteObject(hImg);
         PostQuitMessage(0);
         break;
     default:
