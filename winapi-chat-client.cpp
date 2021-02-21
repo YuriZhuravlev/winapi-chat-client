@@ -20,6 +20,7 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    Login(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -117,13 +118,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 
 // Мои константы
-const int ID_BUTTON_SEND = 1000;
-const int ID_LIST_BOX_MESSAGES = 1001;
-const int ID_EDIT_TEXT_MESSAGES = 1002;
+const int ID_BUTTON_SEND = 51000;
+const int ID_LIST_BOX_MESSAGES = 51001;
+const int ID_EDIT_TEXT_MESSAGES = 51002;
 
 // Логические элементы
 ChatClient* ptClient;
 char* lpUtf = new char[100];
+LPWSTR username = new WCHAR[30];
 LPWSTR lpString = new WCHAR[100];
 std::vector<LPWSTR> itemList = std::vector<LPWSTR>();
 
@@ -140,16 +142,23 @@ void onMessage(char* buffer, int length) {
 }
 
 void onCreate(HWND hWnd) {
+    DialogBox(hInst, MAKEINTRESOURCE(IDD_LOGIN), hWnd, Login);
+    CreateWindow(TEXT("STATIC"), username, WS_VISIBLE | WS_CHILD, 520, 10, 150, 26, hWnd, NULL, hInst, NULL);
     CreateWindow(TEXT("BUTTON"), TEXT("SEND"), WS_VISIBLE | WS_CHILD | BS_FLAT | BS_PUSHBUTTON,
         455, 310, 50, 26, hWnd, (HMENU)ID_BUTTON_SEND, hInst, NULL);
     hEditText = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("EDIT"), TEXT(""), WS_VISIBLE | WS_CHILD,
         10, 310, 440, 26, hWnd, (HMENU)ID_EDIT_TEXT_MESSAGES, hInst, NULL);
     hList = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("LISTBOX"), TEXT("listbox"), LBS_NOSEL |
-        WS_VISIBLE | WS_CHILD | WS_VSCROLL, 
+        WS_VISIBLE | WS_CHILD | WS_VSCROLL,
         10, 10, 500, 300, hWnd, (HMENU)ID_LIST_BOX_MESSAGES, hInst, NULL);
+    return;
+}
 
-    
-    ptClient = new ChatClient("192.168.0.103", "username", onMessage);
+void onResume() {
+    char* utfUsername = new char[30];
+    WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, username, -1, utfUsername, 30, NULL, NULL);
+    WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, lpString, -1, lpUtf, 100, NULL, NULL);
+    ptClient = new ChatClient(lpUtf, utfUsername, onMessage);
     CreateThread(0, 1024, ptClient->staticThreadStart, (void*)ptClient, 0, NULL);
     return;
 }
@@ -184,7 +193,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
             case IDM_EXIT:
-                delete ptClient;
                 DestroyWindow(hWnd);
                 break;
             case  ID_BUTTON_SEND:
@@ -211,6 +219,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_DESTROY:
+        delete ptClient;
+        delete lpUtf;
+        delete username;
+        delete lpString;
         PostQuitMessage(0);
         break;
     default:
@@ -235,6 +247,47 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             return (INT_PTR)TRUE;
         }
         break;
+    }
+    return (INT_PTR)FALSE;
+}
+
+// Обработчик сообщений для окна "Авторизация".
+INT_PTR CALLBACK Login(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        SetDlgItemText(hDlg, IDC_IPADDRESS_DIALOG, TEXT("192.168.0.103"));
+        return (INT_PTR)TRUE;
+
+    case WM_COMMAND:
+        {
+            int wmId = LOWORD(wParam);
+            switch (wmId)
+            {
+            case IDOK:
+            {
+                if (GetDlgItemText(hDlg, IDC_EDIT1, username, 30) > 0) {
+                    GetDlgItemText(hDlg, IDC_IPADDRESS_DIALOG, lpString, 100);
+                    onResume();
+                    EndDialog(hDlg, LOWORD(wParam));
+                }
+                else {
+                    SetDlgItemText(hDlg, IDC_EDIT1, TEXT("EMPTY NAME!!"));
+                }
+                return (INT_PTR)TRUE;
+            }
+            case IDCANCEL:
+            {
+                exit(1);
+                return (INT_PTR)TRUE;
+                break;
+            }
+            default:
+                break;
+            }
+        }
     }
     return (INT_PTR)FALSE;
 }

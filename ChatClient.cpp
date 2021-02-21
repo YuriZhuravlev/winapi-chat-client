@@ -21,7 +21,7 @@ ChatClient::ChatClient(const char* addr, const char* username, CALLBACK_ACTION c
 }
 
 ChatClient::~ChatClient() {
-
+	delete mUsername;
 }
 
 DWORD ChatClient::listenerSocket() {
