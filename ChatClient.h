@@ -3,7 +3,7 @@
 #pragma warning(disable : 4996)
 #include <WinSock2.h>
 
-typedef void (*CALLBACK_ACTION)(char*);
+typedef void (*CALLBACK_ACTION)(char*, int);
 
 class ChatClient
 {
@@ -12,8 +12,8 @@ public:
 	ChatClient(const char* addr, const char* username, CALLBACK_ACTION callback);
 	~ChatClient();
 	void sendMessage(char* str);
-private:
 	static DWORD WINAPI staticThreadStart(void* p);
+private:
 	SOCKET mSocket;
 	SOCKADDR_IN mSockAddr;
 	const char* mUsername;

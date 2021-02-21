@@ -1,6 +1,6 @@
 #include "ChatClient.h"
 
-ChatClient::ChatClient() { }
+ChatClient::ChatClient() {  }
 
 ChatClient::ChatClient(const char* addr, const char* username, CALLBACK_ACTION callback) {
 	mUsername = username;
@@ -18,18 +18,6 @@ ChatClient::ChatClient(const char* addr, const char* username, CALLBACK_ACTION c
 	mSockAddr.sin_family = PF_INET;
 	mSockAddr.sin_addr.S_un.S_addr = inet_addr(addr);
 	mSockAddr.sin_port = htons(8006);
-
-
-	strcpy(mBuffer, "c++ client!");
-	mCallback(mBuffer);
-	connect(mSocket, (sockaddr*)&mSockAddr, sizeof(mSockAddr));
-	int k = ::send(mSocket, username, strlen(username), 0);
-	if (k < -1) {
-		strcpy(mBuffer, "f*ck");
-		mCallback(mBuffer);
-	}
-
-	CreateThread(0, 1024, staticThreadStart, (void*)this, 0, NULL);
 }
 
 ChatClient::~ChatClient() {
@@ -37,10 +25,16 @@ ChatClient::~ChatClient() {
 }
 
 DWORD ChatClient::listenerSocket() {
+	connect(mSocket, (sockaddr*)&mSockAddr, sizeof(mSockAddr));
+	int k = ::send(mSocket, mUsername, strlen(mUsername), 0);
+	if (k < -1) {
+		strcpy(mBuffer, "error connect! Restart please");
+		mCallback(mBuffer, strlen(mBuffer));
+	}
 	while (true) {
 		int k = recv(mSocket, mBuffer, sizeof(mBuffer), 0);
 		if (k > 0) {
-			mCallback(mBuffer);
+			mCallback(mBuffer, k);
 		}
 		Sleep(30);
 	}

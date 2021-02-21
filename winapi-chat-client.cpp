@@ -102,7 +102,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // Сохранить маркер экземпляра в глобальной переменной
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, 550, 500, nullptr, nullptr, hInstance, nullptr);
+      CW_USEDEFAULT, 0, 700, 410, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
@@ -122,7 +122,7 @@ const int ID_LIST_BOX_MESSAGES = 1001;
 const int ID_EDIT_TEXT_MESSAGES = 1002;
 
 // Логические элементы
-ChatClient client;
+ChatClient* ptClient;
 char* lpUtf = new char[100];
 LPWSTR lpString = new WCHAR[100];
 std::vector<LPWSTR> itemList = std::vector<LPWSTR>();
@@ -131,22 +131,26 @@ std::vector<LPWSTR> itemList = std::vector<LPWSTR>();
 HWND hList, hEditText;
 
 // Мои функции
-void onMessage(char* buffer) {
-    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buffer, -1, lpString, 100);
+void onMessage(char* buffer, int length) {
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buffer, -1, lpString, length);
+    for (int i = length; i < 100; ++i) {
+        lpString[i] = '\0';
+    }
     SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)lpString);
 }
 
 void onCreate(HWND hWnd) {
-    CreateWindow(TEXT("BUTTON"), TEXT("SEND"), WS_VISIBLE | WS_CHILD, 
-        250, 350, 50, 26, hWnd, (HMENU)ID_BUTTON_SEND, hInst, NULL);
+    CreateWindow(TEXT("BUTTON"), TEXT("SEND"), WS_VISIBLE | WS_CHILD | BS_FLAT | BS_PUSHBUTTON,
+        455, 310, 50, 26, hWnd, (HMENU)ID_BUTTON_SEND, hInst, NULL);
     hEditText = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("EDIT"), TEXT(""), WS_VISIBLE | WS_CHILD,
-        50, 350, 200, 26, hWnd, (HMENU)ID_EDIT_TEXT_MESSAGES, hInst, NULL);
+        10, 310, 440, 26, hWnd, (HMENU)ID_EDIT_TEXT_MESSAGES, hInst, NULL);
     hList = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("LISTBOX"), TEXT("listbox"), LBS_NOSEL |
-        WS_VISIBLE | WS_CHILD | WS_VSCROLL, 50, 50, 250, 300,
-        hWnd, (HMENU)ID_LIST_BOX_MESSAGES, hInst, NULL);
+        WS_VISIBLE | WS_CHILD | WS_VSCROLL, 
+        10, 10, 500, 300, hWnd, (HMENU)ID_LIST_BOX_MESSAGES, hInst, NULL);
 
     
-    client = ChatClient("192.168.0.103", "username", onMessage);
+    ptClient = new ChatClient("192.168.0.103", "username", onMessage);
+    CreateThread(0, 1024, ptClient->staticThreadStart, (void*)ptClient, 0, NULL);
     return;
 }
 
@@ -180,15 +184,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
             case IDM_EXIT:
+                delete ptClient;
                 DestroyWindow(hWnd);
                 break;
             case  ID_BUTTON_SEND:
-                GetWindowText(hEditText, lpString, 100);
-                SetWindowText(hEditText, TEXT(""));
-                WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, lpString, -1, lpUtf, 100, NULL, NULL);
-                client.sendMessage(lpUtf);
-                SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)lpString);
+            {
+                int n = GetWindowText(hEditText, lpString, 100);
+                if (n > 0) {
+                    SetWindowText(hEditText, TEXT(""));
+                    WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, lpString, -1, lpUtf, 100, NULL, NULL);
+                    ptClient->sendMessage(lpUtf);
+                }
                 break;
+            }
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
