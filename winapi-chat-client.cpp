@@ -119,7 +119,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 
 // Мои константы
-const int ID_BUTTON_SEND = 51000;
+//const int ID_BUTTON_SEND = 51000;
 const int ID_LIST_BOX_MESSAGES = 51001;
 const int ID_EDIT_TEXT_MESSAGES = 51002;
 const int ID_CHECKBOX = 51003;
@@ -159,7 +159,7 @@ void onCreate(HWND hWnd) {
         455, 310, 50, 26, hWnd, (HMENU)ID_BUTTON_SEND, hInst, NULL);
     SetClassLongPtr(tmp, GCL_HCURSOR, (LONG)hCursor);
 
-    hEditText = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("EDIT"), TEXT(""), WS_VISIBLE | WS_CHILD,
+    hEditText = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("EDIT"), TEXT(""), ES_MULTILINE | WS_VISIBLE | WS_CHILD,
         10, 310, 440, 26, hWnd, (HMENU)ID_EDIT_TEXT_MESSAGES, hInst, NULL);
 
     hList = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("LISTBOX"), TEXT("listbox"), LBS_NOSEL |
@@ -229,9 +229,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_CREATE:
-        {
-            onCreate(hWnd);
-        }
+        onCreate(hWnd);
         break;
     case WM_COMMAND:
         {
@@ -351,7 +349,6 @@ INT_PTR CALLBACK Login(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_INITDIALOG:
         SetDlgItemText(hDlg, IDC_IPADDRESS_DIALOG, TEXT("192.168.0.103"));
         return (INT_PTR)TRUE;
-
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
