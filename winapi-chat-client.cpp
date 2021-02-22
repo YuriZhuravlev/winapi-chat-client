@@ -294,8 +294,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
 
             HDC hCompatibleDC;
-            PAINTSTRUCT PaintStruct;
-            HANDLE hBitmap, hOldBitmap;
+            HANDLE hOldBitmap;
             BITMAP Bitmap;
 
             GetObject(hImg, sizeof(BITMAP), &Bitmap);
@@ -305,7 +304,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 100, SRCCOPY);
             SelectObject(hCompatibleDC, hOldBitmap);
             DeleteDC(hCompatibleDC);
-            // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
+
             EndPaint(hWnd, &ps);
         }
         break;
